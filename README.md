@@ -105,3 +105,6 @@ npm start
 - AI 模型：OpenAI / OpenRouter / DeepSeek / Moonshot
 - 图标：Unicode Emoji
 - 部署：Render / Railway / GitHub Pages
+
+
+<!-- trigger-pages-deploy: 2026-08-22T07:44:48.180Z -->
