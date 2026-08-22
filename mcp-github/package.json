@@ -1,0 +1,17 @@
+{
+  "name": "anger-ai-game-github-mcp",
+  "version": "1.0.0",
+  "description": "Minimal GitHub MCP server for the Anger AI Game. Only requires a GitHub API token.",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "anger-ai-github-mcp": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

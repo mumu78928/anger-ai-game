@@ -1,0 +1,30 @@
+{
+  "name": "anger-ai-game",
+  "version": "1.0.0",
+  "description": "一款让玩家通过激怒 AI 来通关的 5 关小游戏 - 前端 + 后端",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "build": "echo 'No build step - frontend is static HTML'"
+  },
+  "keywords": [
+    "game",
+    "ai",
+    "chat",
+    "openai",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

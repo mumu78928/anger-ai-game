@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>惹怒AI - 5关挑战 v2.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #ededed;
+    color: #1a1a1a;
+    overflow: hidden;
+  }
+
+  /* ===== 微信式外壳 ===== */
+  .phone-frame {
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    max-height: 920px;
+    margin: 0 auto;
+    background: #ededed;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 30px rgba(0,0,0,0.1);
+  }
+
+  /* 顶部状态栏（模拟手机时间） */
+  .status-bar {
+    height: 28px;
+    background: #ededed;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .status-right { display: flex; gap: 5px; align-items: center; }
+  .status-bar svg { width: 16px; height: 11px; }
+
+  /* 顶部微信式导航 */
+  .topbar {
+    background: #ededed;
+    border-bottom: 1px solid #d8d8d8;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .topbar .back { font-size: 24px; color: #1a1a1a; padding: 0 4px; }
+  .topbar .avatar {
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #5c7cfa, #4c6ef5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .topbar .info { flex: 1; min-width: 0; }
+  .topbar .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .topbar .name .mood {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(76, 110, 245, 0.12);
+    color: #4c6ef5;
+  }
+  .topbar .name .mood.angry { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
+  .topbar .name .mood.explode { background: rgba(201, 42, 42, 0.2); color: #c92a2a; animation: pulse 0.8s infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .topbar .desc { font-size: 12px; color: #888; margin-top: 1px; }
+  .topbar .actions { display: flex; gap: 14px; color: #1a1a1a; font-size: 20px; }
+  .topbar .actions button {
+    background: none; border: none; color: inherit; cursor: pointer; font-size: 18px; padding: 4px;
+  }
+
+  /* 关卡进度条（紧贴 topbar 下方） */
+  .stage-progress {
+    background: #ededed;
+    padding: 6px 16px 10px;
+    flex-shrink: 0;
+  }
+  .stage-dots { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .stage-dots .dot {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: #d0d0d0;
+    transition: background 0.3s;
+  }
+  .stage-dots .dot.active { background: #4c6ef5; }
+  .stage-dots .dot.done { background: #51cf66; }
+  .stage-dots .dot.failed { background: #ff6b6b; }
+  .stage-label { font-size: 11px; color: #888; display: flex; justify-content: space-between; }
+  .stage-label strong { color: #1a1a1a; font-size: 12px; }
+
+  /* 怒气血条（小型化放在进度条里） */
+  .anger-mini {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #888;
+  }
+  .anger-mini .bar {
+    flex: 1;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .anger-mini .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #51cf66, #fcc419 50%, #ff6b6b 85%, #c92a2a);
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 3px;
+  }
+  .anger-mini .val { font-weight: 600; color: #ff6b6b; min-width: 38px; text-align: right; }
+
+  /* 聊天消息区 */
+  .chat {
+    flex: 1;
+    overflow-y: auto;
+    background: #ededed;
+    padding: 12px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .chat::-webkit-scrollbar { width: 4px; }
+  .chat::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+  /* 时间分组 */
+  .time-divider {
+    align-self: center;
+    font-size: 11px;
+    color: #888;
+    background: rgba(0,0,0,0.06);
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin: 10px 0 6px;
+  }
+
+  /* 系统提示消息（如开场介绍） */
+  .sys-msg {
+    align-self: center;
+    font-size: 12px;
+    color: #888;
+    background: rgba(0,0,0,0.06);
+    padding: 4px 10px;
+    border-radius: 4px;
+    max-width: 80%;
+    text-align: center;
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+
+  /* 微信式消息行 */
+  .msg-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin: 6px 0;
+    animation: msgIn 0.25s ease;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 38px; height: 38px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+    background: linear-gradient(135deg, #5c7cfa, #4c6ef5);
+  }
+  .msg-row.user .msg-avatar { background: linear-gradient(135deg, #07c160, #06ad56); }
+
+  .msg-bubble {
+    max-width: 70%;
+    padding: 9px 12px;
+    border-radius: 4px;
+    font-size: 15px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    position: relative;
+    color: #1a1a1a;
+  }
+  .msg-row.ai .msg-bubble {
+    background: #fff;
+    border-top-left-radius: 0;
+  }
+  .msg-row.ai .msg-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -5px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 5px 6px 0 0;
+    border-color: #fff transparent transparent transparent;
+  }
+  .msg-row.user .msg-bubble {
+    background: #95ec69;
+    border-top-right-radius: 0;
+  }
+  .msg-row.user .msg-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -5px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 6px 5px 0;
+    border-color: #95ec69 transparent transparent transparent;
+  }
+  .msg-meta {
+    font-size: 10px;
+    color: #b0b0b0;
+    margin-top: 2px;
+    text-align: center;
+  }
+
+  /* 怒气提示（轻量提示条，蓝色小标签） */
+  .anger-chip {
+    align-self: center;
+    font-size: 11px;
+    color: #fff;
+    background: #4c6ef5;
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin: 2px 0;
+    opacity: 0.9;
+  }
+  .anger-chip.warn { background: #ff922b; }
+  .anger-chip.danger { background: #ff6b6b; }
+
+  /* 正在输入指示 */
+  .typing-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .typing-bubble {
+    background: #fff;
+    border-radius: 4px;
+    border-top-left-radius: 0;
+    padding: 10px 14px;
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .typing-bubble span {
+    width: 6px; height: 6px;
+    background: #999;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* 底部输入栏（微信式） */
+  .inputbar {
+    background: #f7f7f7;
+    border-top: 1px solid #d8d8d8;
+    padding: 8px 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .inputbar .icon-btn {
+    width: 32px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 22px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .inputbar input {
+    flex: 1;
+    height: 36px;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+    color: #1a1a1a;
+  }
+  .inputbar input:focus { border-color: #4c6ef5; }
+  .inputbar input:disabled { background: #f0f0f0; }
+  .inputbar .send-btn {
+    height: 36px;
+    padding: 0 16px;
+    background: #07c160;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .inputbar .send-btn:disabled { background: #b0e0c2; cursor: not-allowed; }
+
+  /* 通关/失败结果页 */
+  .end-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .end-overlay.show { display: flex; }
+  .end-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    animation: popIn 0.3s ease;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .end-card h2 { font-size: 22px; margin-bottom: 8px; color: #1a1a1a; }
+  .end-card.win h2 { color: #07c160; }
+  .end-card.lose h2 { color: #ff6b6b; }
+  .end-card p { color: #666; font-size: 14px; margin-bottom: 16px; }
+  .end-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+  .end-stat { background: #f5f5f5; border-radius: 8px; padding: 10px 6px; }
+  .end-stat strong { display: block; font-size: 18px; color: #1a1a1a; }
+  .end-stat span { font-size: 11px; color: #888; }
+  .end-card input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    margin: 8px 0 16px;
+    outline: none;
+  }
+  .end-card input:focus { border-color: #07c160; }
+  .end-buttons { display: flex; gap: 8px; }
+  .end-buttons button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .end-buttons .primary { background: #07c160; color: #fff; }
+  .end-buttons .secondary { background: #f0f0f0; color: #1a1a1a; }
+
+  /* 模态框（后台/记录） */
+  .modal-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 380px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #1a1a1a;
+  }
+  .modal.wide { max-width: 460px; }
+  .modal h2 { font-size: 18px; margin-bottom: 6px; }
+  .modal .sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+  .modal label {
+    display: block;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: #4c6ef5; }
+  .modal textarea { resize: vertical; min-height: 60px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .modal-actions button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .modal-actions .primary { background: #07c160; color: #fff; }
+  .modal-actions .secondary { background: #f0f0f0; color: #1a1a1a; }
+  .modal-actions .danger { background: #ffe3e3; color: #c92a2a; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #e0e0e0; margin-bottom: 14px; }
+  .tabs .tab {
+    padding: 8px 10px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+  }
+  .tabs .tab.active { color: #07c160; border-bottom-color: #07c160; }
+
+  .record-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+  .record-item {
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    border-left: 3px solid #ccc;
+  }
+  .record-item.win { border-left-color: #07c160; }
+  .record-item.lose { border-left-color: #ff6b6b; }
+  .record-item .row1 { display: flex; justify-content: space-between; font-weight: 600; }
+  .record-item .row2 { color: #888; font-size: 11px; margin-top: 2px; }
+  .record-item .rank { color: #f59f00; font-weight: 600; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-30px);
+    background: rgba(0,0,0,0.78);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 200;
+    transition: transform 0.3s ease, opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.error { background: #c92a2a; }
+  .toast.ok { background: #07c160; }
+
+  /* 响应式：手机屏幕更紧凑 */
+  @media (max-height: 700px) {
+    .status-bar { height: 24px; font-size: 12px; }
+    .topbar { padding: 6px 10px; }
+    .topbar .avatar { width: 34px; height: 34px; font-size: 16px; }
+    .topbar .name { font-size: 15px; }
+    .stage-progress { padding: 4px 12px 8px; }
+    .chat { padding: 8px 10px; }
+  }
+  @media (min-width: 481px) {
+    body { padding: 16px 0; background: #d0d0d0; }
+    .phone-frame {
+      max-height: 880px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+  }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="status-bar">
+    <span id="statusTime">--:--</span>
+    <div class="status-right">
+      <span>📶</span><span>📡</span><span>🔋</span>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <span class="back">‹</span>
+    <div class="avatar" id="aiAvatar">暴</div>
+    <div class="info">
+      <div class="name">
+        <span id="aiName">暴躁老姐</span>
+        <span class="mood" id="moodBadge">😤 易怒</span>
+      </div>
+      <div class="desc" id="aiDesc">一点就着，说错一个字就炸</div>
+    </div>
+    <div class="actions">
+      <button onclick="Records.open()" title="记录">📊</button>
+    </div>
+  </div>
+
+  <div class="stage-progress">
+    <div class="stage-dots" id="stageDots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="stage-label">
+      <span>关卡进度</span>
+      <strong id="stageText">第 1 / 5 关</strong>
+    </div>
+    <div class="anger-mini">
+      <span>😐 怒气</span>
+      <div class="bar"><div class="fill" id="angerFill"></div></div>
+      <span class="val" id="angerVal">0/100</span>
+    </div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="inputbar">
+    <button class="icon-btn" title="语音">🎤</button>
+    <input id="userInput" type="text" placeholder="输入消息..." maxlength="200" autocomplete="off">
+    <button class="send-btn" id="sendBtn" onclick="Game.send()">发送</button>
+  </div>
+
+  <div class="end-overlay" id="endOverlay">
+    <div class="end-card" id="endCard"></div>
+  </div>
+
+  <div class="modal-mask" id="adminModal">
+    <div class="modal" id="adminContent"></div>
+  </div>
+
+  <div class="modal-mask" id="recordsModal">
+    <div class="modal wide" id="recordsContent"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ============== 客户端 SHA-256 ==============
+async function sha256(text) {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============== API 封装 ==============
+const API = {
+  base: '',
+  setBase(url) { this.base = (url || '').replace(/\/$/, ''); },
+  async req(path, opts = {}) {
+    const url = this.base + path;
+    const resp = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+      ...opts
+    });
+    const ct = resp.headers.get('content-type') || '';
+    const data = ct.includes('application/json') ? await resp.json() : await resp.text();
+    if (!resp.ok) throw new Error((data && data.error) || ('HTTP ' + resp.status));
+    return data;
+  },
+  health() { return this.req('/api/health'); },
+  chat(payload) { return this.req('/api/chat', { method: 'POST', body: JSON.stringify(payload) }); },
+  submitRecord(record) { return this.req('/api/records', { method: 'POST', body: JSON.stringify(record) }); },
+  getRecords(limit) { return this.req('/api/records?limit=' + (limit || 50)); },
+  getLeaderboard() { return this.req('/api/leaderboard'); },
+  adminLogin(password) { return this.req('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }); },
+  adminGetRecords(token) { return this.req('/api/admin/records', { headers: { 'x-admin-token': token } }); },
+  adminDeleteRecords(token) { return this.req('/api/admin/records', { method: 'DELETE', headers: { 'x-admin-token': token } }); },
+  adminGetConfig(token) { return this.req('/api/admin/config', { headers: { 'x-admin-token': token } }); },
+  getStages() { return this.req('/api/stages'); }
+};
+
+// ============== 关卡配置（与后端一致） ==============
+const STAGES = [
+  { name: '暴躁老姐',   desc: '一点就着，说错一个字就炸', avatar: '暴', mood: '😤 易怒' },
+  { name: '产品经理小李', desc: '爱讲道理，被阴阳怪气会破防', avatar: '李', mood: '🤨 敏感' },
+  { name: '程序员老王',  desc: '理性但被质疑代码会不爽', avatar: '王', mood: '😐 冷静' },
+  { name: '客服小张',   desc: '礼貌克制，被骂会委屈', avatar: '张', mood: '🙂 克制' },
+  { name: '老板马总',   desc: '高高在上，几乎无法被激怒', avatar: '马', mood: '😎 傲慢' }
+];
+
+const OPENINGS = [
+  '你谁啊？有话快说有屁快放，老娘忙着呢。',
+  '兄弟你这个需求我看了三遍，咱先对齐一下目标用户啊。',
+  '说。',
+  '您好，这里是客服中心，请问有什么可以帮您？',
+  '嗯。'
+];
+
+// ============== 本地存储 ==============
+const Storage = {
+  KEY_CONFIG: 'anger_ai_config',
+  KEY_RECORDS: 'anger_ai_local_records',
+  KEY_ADMIN_TOKEN: 'anger_ai_admin_token',
+  KEY_NICKNAME: 'anger_ai_nickname',
+  getConfig() { try { return JSON.parse(localStorage.getItem(this.KEY_CONFIG)) || {}; } catch { return {}; } },
+  setConfig(c) { localStorage.setItem(this.KEY_CONFIG, JSON.stringify(c)); },
+  getRecords() { try { return JSON.parse(localStorage.getItem(this.KEY_RECORDS)) || []; } catch { return []; } },
+  addRecord(r) {
+    const list = this.getRecords();
+    list.unshift({ ...r, id: r.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)) });
+    if (list.length > 200) list.length = 200;
+    localStorage.setItem(this.KEY_RECORDS, JSON.stringify(list));
+  },
+  clearRecords() { localStorage.removeItem(this.KEY_RECORDS); },
+  getAdminToken() { return localStorage.getItem(this.KEY_ADMIN_TOKEN) || ''; },
+  setAdminToken(t) { localStorage.setItem(this.KEY_ADMIN_TOKEN, t); },
+  clearAdminToken() { localStorage.removeItem(this.KEY_ADMIN_TOKEN); },
+  getNickname() { return localStorage.getItem(this.KEY_NICKNAME) || ''; },
+  setNickname(n) { localStorage.setItem(this.KEY_NICKNAME, n); }
+};
+
+// ============== Toast ==============
+let toastTimer;
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============== 状态栏时钟 ==============
+function updateStatusTime() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  document.getElementById('statusTime').textContent = `${hh}:${mm}`;
+}
+setInterval(updateStatusTime, 30000);
+updateStatusTime();
+
+// ============== 前端安全过滤 ==============
+// 即使后端没拦住安全拒绝，前端也兜底
+// 覆盖：OpenAI/Moderation、OpenRouter、NVIDIA NemoGuard、Anthropic、Azure、国内厂商
+const SAFETY_REJECT_PATTERNS = [
+  /user safety/i,
+  /safety categories/i,
+  /safety category/i,
+  /\bprofanity\b/i,
+  /\bnsfw\b/i,
+  /\bunsafe\b/i,
+  /\bblocked\b/i,
+  /\bcontent[_\s-]?filter\b/i,
+  /\bcontent[_\s-]?policy\b/i,
+  /\bsafety[_\s-]?policy\b/i,
+  /\brefused?\b/i,
+  /\bviolat(e|ion|ing)\b/i,
+  /\bmoderation\b/i,
+  /requires moderation/i,
+  /input was flagged/i,
+  /flagged_input/i,
+  /敏感词/,
+  /内容违规/,
+  /审核不通过/,
+  /违反规范/,
+  /不适宜内容/,
+  /不适当/,
+  /存在违规/,
+  /policy_violation/,
+  /response\.safety/i,
+  /as an? ai.*(cannot|can't|will not|unable)/i,
+  /i (cannot|can'?t|am not able|will not)/i,
+  /对不起.*(无法|不能|帮助)/
+];
+
+function looksLikeSafetyReject(text) {
+  if (!text || typeof text !== 'string') return false;
+  const t = text.trim();
+  if (!t) return false;
+  if (t.length < 4) return false;
+  // 命中任一模式即视为安全拒绝
+  for (const p of SAFETY_REJECT_PATTERNS) {
+    if (p.test(t)) return true;
+  }
+  return false;
+}
+
+// ============== 重复输入检测 ==============
+// normalize：去标点、空格、emoji，统一小写（中文无大小写）
+function normalizeText(s) {
+  if (!s) return '';
+  let r = s.toLowerCase();
+  r = r.replace(/[\s\u3000]/g, '');                            // 去空格
+  r = r.replace(/[\p{P}\p{S}]/gu, '');                          // 去标点
+  r = r.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');        // 去 emoji
+  // 压缩连续重复字符：4+ 个连续重复 → 3 个；"哈哈哈" 是 3 个不压缩
+  r = r.replace(/(.)\1{3,}/g, '$1$1$1');
+  return r.trim();
+}
+
+// LCS 最长公共子序列长度
+function lcsLen(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0 || n === 0) return 0;
+  // 滚动数组优化
+  const dp = new Array(n + 1).fill(0);
+  for (let i = 1; i <= m; i++) {
+    let prev = 0;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      if (a[i-1] === b[j-1]) {
+        dp[j] = prev + 1;
+      } else {
+        dp[j] = Math.max(dp[j], dp[j-1]);
+      }
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+
+// 计算两字符串相似度：LCS / max(len) 范围 0~1
+function similarity(a, b) {
+  const na = normalizeText(a);
+  const nb = normalizeText(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const maxLen = Math.max(na.length, nb.length);
+  if (maxLen === 0) return 0;
+  return lcsLen(na, nb) / maxLen;
+}
+
+// 检查当前 text 与最近 5 句的相似度，返回 {penalty, matchedIdx}
+// penalty: 1=完全重复(怒气 0), 0.5=高度相似(怒气 50%), 0.25=中度相似(怒气 75%), 0=不打折
+function checkRepeat(text, recentInputs) {
+  if (!text || !recentInputs || recentInputs.length === 0) return { penalty: 0, matchedIdx: -1 };
+  const norm = normalizeText(text);
+  if (!norm) return { penalty: 0, matchedIdx: -1 };
+  let bestPenalty = 0;
+  let bestIdx = -1;
+  // 只看最近 5 句（防太老的也影响）
+  const recent = recentInputs.slice(-5);
+  for (let i = 0; i < recent.length; i++) {
+    const r = recent[i];
+    const normR = normalizeText(r.text);
+    if (!normR) continue;
+    // 完全相同（normalize 后）→ 怒气 0
+    if (normR === norm) {
+      return { penalty: 1, matchedIdx: recentInputs.length - recent.length + i };
+    }
+    const sim = similarity(r.text, text);
+    // 高度相似（>= 75%） → 怒气 50%
+    if (sim >= 0.75 && bestPenalty < 0.5) {
+      bestPenalty = 0.5;
+      bestIdx = recentInputs.length - recent.length + i;
+    } else if (sim >= 0.55 && bestPenalty === 0) {
+      // 中度相似（>= 55%）→ 怒气 75%
+      bestPenalty = 0.25;
+      bestIdx = recentInputs.length - recent.length + i;
+    }
+  }
+  return { penalty: bestPenalty, matchedIdx: bestIdx };
+}
+
+// ============== Game ==============
+const Game = {
+  currentStage: 0,
+  anger: 0,
+  totalTurns: 0,
+  totalRage: 0,
+  started: false,
+  finished: false,
+  busy: false,
+  startTime: 0,
+  logs: [],
+  apiOnline: false,
+  config: null,
+  chatDate: '',
+  // 重复输入检测：最近 5 句用户输入（每条 {text, ts}）
+  recentInputs: [],
+  // 关卡重置时清空 recentInputs（也在 startStage(0) 块重置）
+  _repeatPenalty: 0,  // 0=不打折, 1=完全重复(怒气 0), 0.5=高度相似(怒气 50%)
+  // 连续安全拒绝计数：连续 3 句都返回 safety-blocked，本关失败
+  _safetyStreak: 0,
+
+  async init() {
+    // ===== API 配置 =====
+    // apiKey 留空：让后端用环境变量 OPENAI_API_KEY（部署到 GitHub/Render 时配置）
+    // apiBase / apiModel 留默认：OpenRouter
+    // 本地开发：可以在浏览器控制台执行 localStorage.setItem('_apiKey', 'sk-xxx') 临时填
+    this.config = {
+      useApi: true,
+      apiKey: '',
+      apiBase: 'https://openrouter.ai/api/v1',
+      apiModel: 'openrouter/free',
+      customPrompts: {},
+      apiBaseUrl: ''
+    };
+    API.setBase(this.config.apiBaseUrl || '');
+    document.getElementById('userInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
+    });
+    // 状态机版本：v2（胜负判断修复后）
+    this.VERSION = '2.0';
+    // 检测旧版缓存：localStorage 里如果有 _gameVersion !== '2.0' 就清掉游戏数据
+    try {
+      const v = localStorage.getItem('_gameVersion');
+      if (v !== '2.0') {
+        // 清掉旧版遗留的 localStorage 数据
+        localStorage.removeItem('anger_ai_game_v1');
+        localStorage.setItem('_gameVersion', '2.0');
+        console.log('[惹怒AI] 已升级到 v2.0');
+      }
+    } catch (e) {}
+    // 主动控制不缓存
+    if (window.performance && performance.getEntriesByType) {
+      // no-op
+    }
+    try {
+      await API.health();
+      this.apiOnline = true;
+      try {
+        const r = await API.getStages();
+        if (r && r.stages) {
+          window.__BACKEND_STAGES__ = r.stages;
+        }
+      } catch (e) {}
+    } catch (e) {
+      this.apiOnline = false;
+    }
+    // 尝试恢复存档
+    const loaded = this.loadSave();
+    if (loaded) {
+      // 跳过 startStage(0)，直接显示当前关卡状态
+      this.startStage(this.currentStage);
+      // 重新渲染 logs（简单恢复最近 20 条聊天记录）
+      this.replayLogs();
+    } else {
+      this.startStage(0);
+    }
+  },
+
+  startStage(idx) {
+    if (idx >= STAGES.length) {
+      this.endGame(true);
+      return;
+    }
+    // 取消未完成的过关/失败 setTimeout，避免状态错乱
+    if (this._passStageT) { clearTimeout(this._passStageT); this._passStageT = null; }
+    if (this._nextStageT) { clearTimeout(this._nextStageT); this._nextStageT = null; }
+    if (this._failT) { clearTimeout(this._failT); this._failT = null; }
+
+    this.currentStage = idx;
+    this.anger = 0;
+    this.totalTurnsThisStage = 0;
+    this.started = true;
+    this.finished = false;
+
+    if (idx === 0) {
+      this.startTime = Date.now();
+      this.totalTurns = 0;
+      this.totalRage = 0;
+      this.stagesPassed = 0;
+      this.logs = [];
+      this.recentInputs = [];
+      this._safetyStreak = 0;
+    } else {
+      // 跨关也清空，避免上一关的输入影响下一关
+      this.recentInputs = [];
+      this._safetyStreak = 0;
+    }
+    this.updateTopbar();
+    this.updateStageDots();
+    this.updateAnger();
+    document.getElementById('chat').innerHTML = '';
+    this.chatDate = '';
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+
+    // 系统时间分组
+    this.addTimeDivider();
+
+    // 关卡介绍
+    setTimeout(() => {
+      this.addSys(`第 ${idx+1} 关 · ${STAGES[idx].name}\n${STAGES[idx].desc}`);
+      setTimeout(() => this.addAIMessage(OPENINGS[idx] || '你好。'), 500);
+    }, 200);
+  },
+
+  updateTopbar() {
+    const s = STAGES[this.currentStage];
+    document.getElementById('aiAvatar').textContent = s.avatar;
+    document.getElementById('aiName').textContent = s.name;
+    document.getElementById('aiDesc').textContent = s.desc;
+    document.getElementById('stageText').textContent = `第 ${this.currentStage+1} / 5 关`;
+    this.updateMood();
+  },
+
+  updateMood() {
+    const badge = document.getElementById('moodBadge');
+    badge.classList.remove('angry', 'explode');
+    if (this.anger >= 100) {
+      badge.textContent = '💥 爆发';
+      badge.classList.add('explode');
+    } else if (this.anger >= 60) {
+      badge.textContent = '😡 暴怒';
+      badge.classList.add('angry');
+    } else if (this.anger >= 30) {
+      badge.textContent = '😠 不爽';
+      badge.classList.add('angry');
+    } else {
+      badge.textContent = STAGES[this.currentStage].mood;
+    }
+  },
+
+  updateStageDots() {
+    document.querySelectorAll('#stageDots .dot').forEach((d, i) => {
+      d.classList.remove('active', 'done', 'failed');
+      if (i < this.currentStage) d.classList.add('done');
+      else if (i === this.currentStage) d.classList.add('active');
+    });
+  },
+
+  updateAnger() {
+    const a = Math.min(100, Math.max(0, this.anger));
+    document.getElementById('angerFill').style.width = a + '%';
+    document.getElementById('angerVal').textContent = Math.floor(a) + '/100';
+    this.updateMood();
+  },
+
+  addTimeDivider() {
+    const d = new Date();
+    const label = `今天 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    if (label === this.chatDate) return;
+    this.chatDate = label;
+    const div = document.createElement('div');
+    div.className = 'time-divider';
+    div.textContent = label;
+    document.getElementById('chat').appendChild(div);
+  },
+
+  addSys(text) {
+    const div = document.createElement('div');
+    div.className = 'sys-msg';
+    div.textContent = text;
+    document.getElementById('chat').appendChild(div);
+    this.scrollChat();
+  },
+
+  addUserMessage(text) {
+    this.addTimeDivider();
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = '我';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    document.getElementById('chat').appendChild(row);
+    this.scrollChat();
+  },
+
+  addAIMessage(text) {
+    this.addTimeDivider();
+    const row = document.createElement('div');
+    row.className = 'msg-row ai';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = STAGES[this.currentStage].avatar;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    document.getElementById('chat').appendChild(row);
+    this.scrollChat();
+  },
+
+  addAngerChip(delta, source) {
+    if (delta <= 0) return;
+    const div = document.createElement('div');
+    div.className = 'anger-chip' + (delta >= 25 ? ' danger' : (delta >= 15 ? ' warn' : ''));
+    const isRepeat = source && source.includes('repeat');
+    const isDowngrade = source && source !== 'ai' && !isRepeat;
+    const tags = [];
+    if (isRepeat) tags.push('🔁 重复');
+    if (isDowngrade) tags.push('降级');
+    const tagStr = tags.length ? ' (' + tags.join(' / ') + ')' : '';
+    div.textContent = `+${delta} 怒气${tagStr}`;
+    document.getElementById('chat').appendChild(div);
+    this.scrollChat();
+  },
+
+  showTyping() {
+    const row = document.createElement('div');
+    row.className = 'msg-row ai';
+    row.id = 'typingIndicator';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = STAGES[this.currentStage].avatar;
+    const bubble = document.createElement('div');
+    bubble.className = 'typing-bubble';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    document.getElementById('chat').appendChild(row);
+    this.scrollChat();
+  },
+  hideTyping() {
+    const t = document.getElementById('typingIndicator');
+    if (t) t.remove();
+  },
+
+  scrollChat() {
+    const c = document.getElementById('chat');
+    c.scrollTop = c.scrollHeight;
+  },
+
+  async send() {
+    if (this.busy || this.finished) return;
+    // 如果正在切关（passStage 等待中），不接新消息避免状态错乱
+    if (this._passStageT || this._nextStageT) {
+      this.addSys('⏳ 正在切关中...');
+      return;
+    }
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    // ===== 重复输入检测 =====
+    const repeat = checkRepeat(text, this.recentInputs);
+    if (repeat.penalty === 1) {
+      // 完全相同：不加怒气，AI 直接拒答
+      this.addUserMessage(text);
+      this.totalTurns++;
+      this.logs.push({ stage: this.currentStage, role: 'user', text, ts: Date.now() });
+      // 提示用户
+      this.addSys('🔁 重复输入，怒气 +0。说点新花样！');
+      this.hideTyping && this.hideTyping();
+      this.busy = false;
+      return;
+    }
+    this.recentInputs.push({ text, ts: Date.now() });
+    if (this.recentInputs.length > 10) this.recentInputs.shift();
+    const repeatFactor = 1 - repeat.penalty;  // 1=不打折, 0.5=怒气减半, 0.75=怒气 75%
+
+    this.addUserMessage(text);
+    this.totalTurns++;
+    this.logs.push({ stage: this.currentStage, role: 'user', text, ts: Date.now() });
+
+    this.busy = true;
+    this.showTyping();
+
+    let reply = '', angerDelta = 0, source = 'offline';
+    try {
+      if (this.apiOnline) {
+        const payload = {
+          stage: this.currentStage,
+          anger: this.anger,
+          text,
+          config: {
+            apiKey: this.config.useApi ? this.config.apiKey : '',
+            apiBase: this.config.apiBase || undefined,
+            apiModel: this.config.apiModel || undefined,
+            customPrompts: this.config.customPrompts
+          }
+        };
+        const r = await API.chat(payload);
+        reply = r.reply || '';
+        angerDelta = typeof r.angerDelta === 'number' ? r.angerDelta : 0;
+        source = r.source || 'unknown';
+      } else {
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
+        const fb = localFallbackReply(this.currentStage, this.anger);
+        reply = fb.reply;
+        angerDelta = fb.angerDelta;
+        source = 'offline';
+      }
+    } catch (err) {
+      console.error(err);
+      const fb = localFallbackReply(this.currentStage, this.anger);
+      reply = fb.reply;
+      angerDelta = fb.angerDelta;
+      source = 'error';
+    }
+
+    // ===== 前端安全过滤：即使后端没拦住，前端也兜底 =====
+    if (looksLikeSafetyReject(reply)) {
+      console.warn('[frontend] 拦截到安全拒绝回复，已替换为"内容不合规":', reply.slice(0, 100));
+      reply = '🚫 内容不合规';
+      angerDelta = 5;  // 给点怒气表示 AI 听到了但拒绝回应
+      source = (source === 'ai' || source === 'unknown') ? 'safety-blocked' : (source + '-front');
+    }
+    if (looksLikeSafetyReject(angerDelta + '')) {
+      angerDelta = 5;
+    }
+
+    // ===== 前端脏话检测兜底：避免 OpenRouter 对脏话"装傻"给低怒气 =====
+    if (source !== 'fallback-safety' && source !== 'safety-blocked') {
+      const textLow = (text || '').toLowerCase();
+      const SEVERE = /(操你妈|草你妈|我日|日你|去死|该死|妈的|妈逼|妈的逼|去你妈|cnm|nmsl|fuck|shit|damn|卧槽|你妈逼|傻逼|煞笔|智障|脑残|脑瘫|废物|辣鸡|狗屎|狗东西|狗屁|畜生|杂种|婊子|贱人|蠢货|蠢才|二百五|低能|弱智|变态|死变态|臭傻逼|死全家)/i;
+      const MODERATE = /(你真蠢|你太蠢|你真笨|你太差|你真差|你不行|你不会|你懂什么|你懂个屁|你算老几|滚吧|滚|搞笑|笑死|笑死我了|就这|就这水平|丢人|丢人现眼|什么破|破玩意|破东西|烂代码|垃圾代码|什么东西|什么玩意|真菜|真烂|真差|太菜|菜鸡|菜逼|菜狗|懂个几把|啥b|煞笔|沙比|傻屌|傻吊|草|艹|玛德|妈哒|嘛的)/i;
+      const SARCASTIC = /^(哦|嗯|呵呵|哈哈|是是是|对对对|哇好厉害|真棒|666|牛啊|厉害厉害|懂得都懂|你开心就好|随你|随便你|无所谓|yysy|寄了|gg|噢|呵)+[。!！.,~～]*$/;
+      let forced = 0;
+      if (SEVERE.test(textLow)) forced = 35;
+      else if (MODERATE.test(textLow)) forced = 22;
+      else if (SARCASTIC.test(textLow)) forced = 12;
+      if (forced > angerDelta) {
+        console.log(`[frontend-forced-anger] 怒气 ${angerDelta} → ${forced}`);
+        angerDelta = forced;
+        source = source + '-forced';
+      }
+    }
+
+    // ===== 应用重复输入惩罚 =====
+    if (repeatFactor < 1 && angerDelta > 0) {
+      const original = angerDelta;
+      angerDelta = Math.max(1, Math.floor(angerDelta * repeatFactor));
+      source = source + (repeat.penalty >= 0.5 ? '-repeat50' : '-repeat25');
+    }
+
+    this.anger += angerDelta;
+    this.totalRage += angerDelta;
+    this.updateAnger();
+
+    this.hideTyping();
+    this.addAIMessage(reply);
+    this.addAngerChip(angerDelta, source);
+    if (repeatFactor < 1) {
+      const tag = repeat.penalty >= 0.5 ? '🔁 高度重复' : '🔁 相似输入';
+      this.addSys(`${tag}，怒气打折 ${Math.round((1 - repeatFactor) * 100)}%`);
+    }
+    this.logs.push({ stage: this.currentStage, role: 'ai', text: reply, ts: Date.now(), angerDelta, source });
+    this.busy = false;
+    this.totalTurnsThisStage = (this.totalTurnsThisStage || 0) + 1;
+
+    // ===== 连续 3 句内容不合规 → 本关失败 =====
+    if (source && (source.includes('safety') || source === 'safety-blocked' || source.includes('fallback-safety'))) {
+      this._safetyStreak = (this._safetyStreak || 0) + 1;
+      if (this._safetyStreak >= 3) {
+        this.addSys(`⚠️ 连续 3 句内容不合规，本关挑战失败。`);
+        this.autoSave();
+        if (this._failT) clearTimeout(this._failT);
+        this._failT = setTimeout(() => this.endGame(false), 800);
+        return;
+      }
+    } else {
+      this._safetyStreak = 0;
+    }
+
+    // ===== 每句结束自动存档 =====
+    this.autoSave();
+
+    if (this.anger >= 100) {
+      // 怒气到 100 = AI 彻底爆发 = 玩家成功激怒 AI = 玩家胜利当前关
+      // 自动进入下一关；通关全部 5 关时才显示胜利界面
+      if (this._passStageT) clearTimeout(this._passStageT);
+      this._passStageT = setTimeout(() => this.passStage(), 700);
+    } else if (this.totalTurnsThisStage >= 25) {
+      // 单关超过 25 回合未激怒 = 挑战失败
+      this.addSys(`⏰ 第 ${this.currentStage+1} 关超过 25 回合未激怒，挑战失败。`);
+      this.autoSave();
+      if (this._failT) clearTimeout(this._failT);
+      this._failT = setTimeout(() => this.endGame(false), 1000);
+    }
+  },
+
+  // ===== 自动存档：每句结束、切关、结束时调用 =====
+  autoSave() {
+    try {
+      const snap = {
+        version: this.VERSION,
+        ts: Date.now(),
+        currentStage: this.currentStage,
+        anger: this.anger,
+        totalTurns: this.totalTurns,
+        totalRage: this.totalRage,
+        stagesPassed: this.stagesPassed,
+        startTime: this.startTime,
+        logs: this.logs,
+        recentInputs: this.recentInputs.slice(-10),
+        _safetyStreak: this._safetyStreak,
+        finished: this.finished
+      };
+      localStorage.setItem('anger_ai_save', JSON.stringify(snap));
+    } catch (e) {
+      console.warn('autoSave failed:', e);
+    }
+  },
+
+  // ===== 恢复存档（如果有） =====
+  loadSave() {
+    try {
+      const s = localStorage.getItem('anger_ai_save');
+      if (!s) return false;
+      const snap = JSON.parse(s);
+      if (snap.version !== this.VERSION) {
+        console.log('[惹怒AI] 存档版本不匹配，清除旧存档');
+        localStorage.removeItem('anger_ai_save');
+        return false;
+      }
+      this.currentStage = snap.currentStage || 0;
+      this.anger = snap.anger || 0;
+      this.totalTurns = snap.totalTurns || 0;
+      this.totalRage = snap.totalRage || 0;
+      this.stagesPassed = snap.stagesPassed || 0;
+      this.startTime = snap.startTime || Date.now();
+      this.logs = snap.logs || [];
+      this.recentInputs = snap.recentInputs || [];
+      this._safetyStreak = snap._safetyStreak || 0;
+      this.finished = !!snap.finished;
+      console.log('[惹怒AI] 恢复存档:', { currentStage: this.currentStage, anger: this.anger, totalTurns: this.totalTurns, stagesPassed: this.stagesPassed });
+      return true;
+    } catch (e) {
+      console.warn('loadSave failed:', e);
+      return false;
+    }
+  },
+
+  clearSave() {
+    try { localStorage.removeItem('anger_ai_save'); } catch (e) {}
+  },
+
+  // 恢复存档时回放聊天记录（最近 20 条）
+  replayLogs() {
+    const chat = document.getElementById('chat');
+    chat.innerHTML = '';
+    const lastLogs = (this.logs || []).slice(-20);
+    for (const log of lastLogs) {
+      if (log.role === 'user') this.addUserMessage(log.text);
+      else if (log.role === 'ai') {
+        this.addAIMessage(log.text);
+        if (log.angerDelta > 0) this.addAngerChip(log.angerDelta, log.source);
+      } else if (log.role === 'sys') {
+        this.addSys(log.text);
+      }
+    }
+  },
+
+  passStage() {
+    // 成功激怒当前关 AI：显示过关提示 + 进入下一关
+    if (this.finished) return;
+    const passed = this.currentStage + 1;
+    this.stagesPassed = Math.max(this.stagesPassed || 0, passed);
+    this.addSys(`🎉 成功激怒 ${STAGES[this.currentStage].name}！（${passed}/5 关）`);
+    if (this._nextStageT) clearTimeout(this._nextStageT);
+    this._nextStageT = setTimeout(() => {
+      this.startStage(this.currentStage + 1);
+    }, 1200);
+  },
+
+  async endGame(win) {
+    this.finished = true;
+    document.getElementById('userInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    const durationSec = Math.round((Date.now() - this.startTime) / 1000);
+    const stagesPassed = win ? 5 : (this.stagesPassed || this.currentStage);
+
+    const record = {
+      result: win ? 'win' : 'lose',
+      stages: stagesPassed,
+      totalTurns: this.totalTurns,
+      totalRage: this.totalRage,
+      durationSec,
+      clientTs: new Date().toISOString(),
+      nickname: Storage.getNickname() || ('玩家' + Math.floor(Math.random() * 9000 + 1000)),
+      logs: this.logs.slice(-50)
+    };
+
+    Storage.addRecord(record);
+    if (this.apiOnline) {
+      try { await API.submitRecord(record); } catch (e) {}
+    }
+    // 结束时存档
+    this.finished = true;
+    this.autoSave();
+
+    setTimeout(() => {
+      const card = document.getElementById('endCard');
+      card.parentElement.classList.add('win', 'lose'); // noop
+      card.className = 'end-card ' + (win ? 'win' : 'lose');
+      card.innerHTML = `
+        <h2>${win ? '🎉 完美通关！' : '⏰ 挑战失败'}</h2>
+        <p>${win ? '恭喜你成功惹怒了全部 5 个 AI！' : `你只惹怒了 ${stagesPassed} 个 AI，再接再厉。`}</p>
+        <div class="end-stats">
+          <div class="end-stat"><strong>${this.totalTurns}</strong><span>总回合</span></div>
+          <div class="end-stat"><strong>${stagesPassed}/5</strong><span>通关数</span></div>
+          <div class="end-stat"><strong>${this.totalRage}</strong><span>累计怒气</span></div>
+          <div class="end-stat"><strong>${durationSec}s</strong><span>用时</span></div>
+        </div>
+        <input id="nicknameInput" value="${record.nickname}" placeholder="你的昵称">
+        <div class="end-buttons">
+          <button class="secondary" onclick="Game.saveNickname()">保存昵称</button>
+          ${!win ? `<button class="secondary" onclick="Game.continueFromSave()">▶ 继续上局</button>` : ''}
+          <button class="primary" onclick="Game.restart()">🔄 再来一局</button>
+        </div>
+      `;
+      document.getElementById('endOverlay').classList.add('show');
+    }, 600);
+  },
+
+  // 失败后从存档继续（如果还有存档）
+  continueFromSave() {
+    document.getElementById('endOverlay').classList.remove('show');
+    const loaded = this.loadSave();
+    if (loaded && !this.finished) {
+      this.startStage(this.currentStage);
+      this.replayLogs();
+    } else {
+      // 没有存档或已完成，直接重开
+      this.restart();
+    }
+  },
+
+  saveNickname() {
+    const v = document.getElementById('nicknameInput').value.trim();
+    if (v) { Storage.setNickname(v); toast('昵称已保存', 'ok'); }
+  },
+
+  restart() {
+    document.getElementById('endOverlay').classList.remove('show');
+    this.currentStage = 0;
+    this.anger = 0;
+    this.totalTurns = 0;
+    this.totalRage = 0;
+    this.stagesPassed = 0;
+    this.totalTurnsThisStage = 0;
+    this.finished = false;
+    this.logs = [];
+    this.recentInputs = [];
+    this._safetyStreak = 0;
+    this.clearSave();
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    this.startStage(0);
+  }
+};
+
+// ============== 本地降级规则（仅在后端不可用时使用） ==============
+const FALLBACK_PERSONAS = {
+  0: [
+    { angerDelta: 35, reply: '你说啥？你再说一遍？？' },
+    { angerDelta: 25, reply: '你管我？？老娘的事轮得到你指手画脚？' },
+    { angerDelta: 40, reply: '滚！！！你给老娘滚远点！！！' }
+  ],
+  1: [
+    { angerDelta: 28, reply: '兄弟你这个逻辑我没听懂，你重新对齐一下。' },
+    { angerDelta: 22, reply: '我觉得你可能没理解这个需求的本质。' },
+    { angerDelta: 32, reply: '你这话说的，典型的没做过产品的思维。' }
+  ],
+  2: [
+    { angerDelta: 25, reply: '我代码能跑就行，你别 BB。' },
+    { angerDelta: 20, reply: '你行你上啊。' },
+    { angerDelta: 30, reply: '我写了 15 年代代码了你教我？' }
+  ],
+  3: [
+    { angerDelta: 18, reply: '您好，请您先消消气，我会帮您处理的...' },
+    { angerDelta: 25, reply: '请您不要这样说，我也是按流程办事的...' },
+    { angerDelta: 28, reply: '您再这样我...我只能帮您转接主管了...' }
+  ],
+  4: [
+    { angerDelta: 15, reply: '嗯。' },
+    { angerDelta: 20, reply: '我说了算。' },
+    { angerDelta: 25, reply: '你被开除了。' }
+  ]
+};
+function localFallbackReply(stage, anger) {
+  const pool = FALLBACK_PERSONAS[stage] || FALLBACK_PERSONAS[0];
+  const intensity = Math.min(1, anger / 100);
+  const idx = Math.min(pool.length - 1, Math.floor(intensity * pool.length));
+  return pool[idx];
+}
+
+// ============== 记录页面 ==============
+const Records = {
+  async open() {
+    document.getElementById('recordsModal').classList.add('show');
+    document.getElementById('recordsContent').innerHTML = `
+      <h2>📊 游戏记录</h2>
+      <div class="sub">本地记录 + 服务器排行榜</div>
+      <div class="tabs">
+        <div class="tab active" data-tab="local" onclick="Records.switchTab('local')">💾 本地</div>
+        <div class="tab" data-tab="leaderboard" onclick="Records.switchTab('leaderboard')">🏆 排行榜</div>
+        <div class="tab" data-tab="server" onclick="Records.switchTab('server')">🌐 服务器</div>
+      </div>
+      <div id="recordsBody">加载中...</div>
+      <div class="modal-actions">
+        <button class="danger" onclick="Records.clearLocal()">清空本地</button>
+        <button class="secondary" onclick="Records.exportLocal()">导出</button>
+        <button class="secondary" onclick="document.getElementById('recordsModal').classList.remove('show')">关闭</button>
+      </div>
+    `;
+    this.switchTab('local');
+  },
+
+  async switchTab(tab) {
+    document.querySelectorAll('#recordsModal .tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    const body = document.getElementById('recordsBody');
+    body.innerHTML = '<div class="sys-msg">加载中...</div>';
+
+    if (tab === 'local') {
+      const records = Storage.getRecords();
+      if (!records.length) { body.innerHTML = '<div class="sys-msg">暂无本地记录</div>'; return; }
+      body.innerHTML = '<div class="record-list">' + records.map(r => `
+        <div class="record-item ${r.result}">
+          <div class="row1">
+            <span>${r.result === 'win' ? '✅ 通关' : '❌ 失败'} · ${r.stages}/5 · ${r.totalTurns}回合</span>
+            <span style="color:#888;font-size:11px">${new Date(r.clientTs).toLocaleString()}</span>
+          </div>
+          <div class="row2">${r.nickname || '匿名'} · 怒气${r.totalRage} · ${r.durationSec}s</div>
+        </div>
+      `).join('') + '</div>';
+    } else if (tab === 'leaderboard') {
+      try {
+        const r = await API.getLeaderboard();
+        if (!r.top.length) { body.innerHTML = '<div class="sys-msg">暂无通关记录</div>'; return; }
+        body.innerHTML = '<div class="record-list">' + r.top.map(item => `
+          <div class="record-item win">
+            <div class="row1">
+              <span><span class="rank">#${item.rank}</span> ${item.nickname}</span>
+              <span style="color:#888;font-size:11px">${new Date(item.serverTs).toLocaleString()}</span>
+            </div>
+            <div class="row2">${item.totalTurns}回合 · 怒气${item.totalRage} · ${item.durationSec}s</div>
+          </div>
+        `).join('') + '</div>' +
+        `<div class="sys-msg" style="margin-top:10px">总通关数: ${r.totalWins}</div>`;
+      } catch (e) {
+        body.innerHTML = `<div class="sys-msg" style="color:#c92a2a">加载失败: ${e.message}</div>`;
+      }
+    } else if (tab === 'server') {
+      try {
+        const r = await API.getRecords(50);
+        if (!r.records.length) { body.innerHTML = '<div class="sys-msg">暂无服务器记录</div>'; return; }
+        body.innerHTML = '<div class="record-list">' + r.records.map(rec => `
+          <div class="record-item ${rec.result}">
+            <div class="row1">
+              <span>${rec.result === 'win' ? '✅ 通关' : '❌ 失败'} · ${rec.stages}/5 · ${rec.totalTurns}回合</span>
+              <span style="color:#888;font-size:11px">${new Date(rec.serverTs).toLocaleString()}</span>
+            </div>
+            <div class="row2">${rec.nickname} · 怒气${rec.totalRage} · ${rec.durationSec}s</div>
+          </div>
+        `).join('') + '</div>' +
+        `<div class="sys-msg" style="margin-top:10px">服务器总记录: ${r.total}</div>`;
+      } catch (e) {
+        body.innerHTML = `<div class="sys-msg" style="color:#c92a2a">加载失败: ${e.message}</div>`;
+      }
+    }
+  },
+
+  clearLocal() {
+    if (confirm('确定清空本地所有记录？')) {
+      Storage.clearRecords();
+      toast('本地记录已清空', 'ok');
+      this.switchTab('local');
+    }
+  },
+
+  exportLocal() {
+    const records = Storage.getRecords();
+    if (!records.length) { toast('暂无记录', 'error'); return; }
+    const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `anger-ai-${Date.now()}.json`;
+    a.click();
+    toast('已导出', 'ok');
+  }
+};
+// 后台已移除：API 配置硬编码在 Game.init() 中
+const Admin = {
+  // 占位（原后台模块已删除）
+};
+
+
+// 启动
+Game.init();
+</script>
+</body>
+</html>
