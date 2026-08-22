@@ -1,0 +1,18 @@
+name = "anger-ai-game-api"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+
+# Workers Logs
+[observability]
+enabled = true
+
+# KV 命名空间绑定
+[[kv_namespaces]]
+binding = "GAME_KV"
+id = "ff1678a203a74fc0829d2c1df5de85a2"
+
+# 变量（OPENAI_API_KEY 等用 secret 注入；这里只放非敏感默认值）
+[vars]
+OPENAI_BASE_URL = "https://openrouter.ai/api/v1"
+OPENAI_MODEL = "deepseek/deepseek-chat-v3.1:free"
+# 部署后用命令注入: wrangler secret put OPENAI_API_KEY
