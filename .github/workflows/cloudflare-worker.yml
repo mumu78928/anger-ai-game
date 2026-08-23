@@ -16,8 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Cloudflare Workers
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Publish to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
-          # wrangler.toml 在 cloudflare-worker/ 根目录，main = src/worker.js
+          # wrangler.toml 里的 vars (OPENAI_BASE_URL, OPENAI_MODEL) 会自动注入
+          # 但 secret (OPENAI_API_KEY) 需要单独传
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Set Worker secret OPENAI_API_KEY
+        run: |
+          echo "$OPENAI_API_KEY" | wrangler secret put OPENAI_API_KEY --name anger-ai-game-api
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
