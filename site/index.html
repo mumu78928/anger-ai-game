@@ -605,17 +605,29 @@ async function sha256(text) {
 // ============== API 封装 ==============
 const API = {
   base: '',
+  _timeout: 8000,
   setBase(url) { this.base = (url || '').replace(/\/$/, ''); },
+  setTimeout(ms) { this._timeout = ms; },
   async req(path, opts = {}) {
     const url = this.base + path;
-    const resp = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
-      ...opts
-    });
-    const ct = resp.headers.get('content-type') || '';
-    const data = ct.includes('application/json') ? await resp.json() : await resp.text();
-    if (!resp.ok) throw new Error((data && data.error) || ('HTTP ' + resp.status));
-    return data;
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), this._timeout);
+    try {
+      const resp = await fetch(url, {
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+        ...opts
+      });
+      const ct = resp.headers.get('content-type') || '';
+      const data = ct.includes('application/json') ? await resp.json() : await resp.text();
+      if (!resp.ok) throw new Error((data && data.error) || ('HTTP ' + resp.status));
+      return data;
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('请求超时（>8s），网络可能慢');
+      throw e;
+    } finally {
+      clearTimeout(tid);
+    }
   },
   health() { return this.req('/api/health'); },
   chat(payload) { return this.req('/api/chat', { method: 'POST', body: JSON.stringify(payload) }); },
@@ -1205,6 +1217,20 @@ const Game = {
 
     // ===== 每句结束自动存档 =====
     this.autoSave();
+
+    // 异步同步草稿到服务器（失败不影响游戏）
+    if (this.apiOnline && !this.finished) {
+      API.submitRecord({
+        draft: true,
+        currentStage: this.currentStage,
+        anger: this.anger,
+        totalTurns: this.totalTurns,
+        totalRage: this.totalRage,
+        stagesPassed: this.stagesPassed,
+        clientTs: new Date().toISOString(),
+        nickname: Storage.getNickname() || ('玩家' + Math.floor(Math.random() * 9000 + 1000))
+      }).catch(() => {});
+    }
 
     if (this.anger >= 100) {
       // 怒气到 100 = AI 彻底爆发 = 玩家成功激怒 AI = 玩家胜利当前关
