@@ -844,7 +844,8 @@ const Game = {
       apiBase: 'https://openrouter.ai/api/v1',
       apiModel: 'openrouter/free',
       customPrompts: {},
-      apiBaseUrl: ''
+      // 默认指向 Cloudflare Worker 后端（部署地址）
+      apiBaseUrl: 'https://anger-ai-game-api.13965052395.workers.dev'
     };
     API.setBase(this.config.apiBaseUrl || '');
     document.getElementById('userInput').addEventListener('keydown', (e) => {
@@ -1530,5 +1531,5 @@ const Admin = {
 // 启动
 Game.init();
 </script>
-<script>// trigger: 2026-08-22T07:46:44.672Z</script></body>
+</body>
 </html>
