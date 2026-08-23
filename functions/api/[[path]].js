@@ -340,12 +340,22 @@ ${text}
     if (path === '/api/records' && request.method === 'POST') {
       const rec = await request.json().catch(() => null);
       if (!rec || typeof rec !== 'object') return json({ error: 'invalid record' }, 400);
-      const rs = await readRecords();
       rec.id = rec.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
       rec.serverTs = new Date().toISOString();
+
+      // 草稿（每句结束自动同步）单独存，不污染 records
+      if (rec.draft) {
+        const nickname = rec.nickname || '匿名';
+        const draftKey = 'draft:' + nickname;
+        // 同一玩家只保留最新草稿
+        await env.GAME_KV.put(draftKey, JSON.stringify(rec));
+        return json({ ok: true, id: rec.id, kind: 'draft' });
+      }
+
+      const rs = await readRecords();
       rs.unshift(rec);
       await writeRecords(rs);
-      return json({ ok: true, id: rec.id });
+      return json({ ok: true, id: rec.id, kind: 'record' });
     }
     if (path === '/api/records' && request.method === 'GET') {
       const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
