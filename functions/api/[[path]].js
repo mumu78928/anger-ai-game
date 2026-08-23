@@ -214,7 +214,7 @@ export const onRequest = async (context) => {
 
       const apiKey = (config && config.apiKey) || env.OPENAI_API_KEY;
       const apiBase = (config && config.apiBase) || env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-      const apiModel = (config && config.apiModel) || env.OPENAI_MODEL || 'gpt-3.5-turbo';
+      const apiModel = (config && config.apiModel) || env.OPENAI_MODEL || 'deepseek/deepseek-chat-v3.1:free';
       const customPrompt = (config && config.customPrompts && config.customPrompts[stage]) || null;
       const SAFETY_RESP = { angerDelta: 5, reply: '🚫 内容不合规' };
 
@@ -255,11 +255,19 @@ ${text}
           };
           if (!apiModel.includes('free')) body2.response_format = { type: 'json_object' };
 
-          const r = await fetch(apiBase.replace(/\/$/, '') + '/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-            body: JSON.stringify(body2)
-          });
+          // 429 自动重试 2 次（指数退避 1s → 3s）
+          let r = null, attempt = 0;
+          for (attempt = 0; attempt < 3; attempt++) {
+            r = await fetch(apiBase.replace(/\/$/, '') + '/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+              body: JSON.stringify(body2)
+            });
+            if (r.status !== 429 && r.status !== 503) break;
+            const wait = (attempt + 1) * 2000;
+            console.log('[chat] 429/503 retry', attempt + 1, 'after', wait, 'ms');
+            await new Promise(r => setTimeout(r, wait));
+          }
           if (!r.ok) {
             const errText = await r.text();
             if (isSafety(errText)) {
@@ -389,7 +397,7 @@ ${text}
       return json({
         hasApiKey: !!env.OPENAI_API_KEY,
         apiBase: env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-        apiModel: env.OPENAI_MODEL || 'gpt-3.5-turbo',
+        apiModel: env.OPENAI_MODEL || 'deepseek/deepseek-chat-v3.1:free',
         recordsCount: rs.length
       });
     }
