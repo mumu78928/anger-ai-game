@@ -264,6 +264,11 @@ ${text}
             const errText = await r.text();
             if (isSafety(errText)) {
               result = { ...SAFETY_RESP }; source = 'fallback-safety';
+            } else if (r.status === 429 || r.status === 503) {
+              // 限流/服务暂时不可用：返回"再试一次"而不是内容过滤
+              const fb = fallbackReply(stage, cur);
+              result = { angerDelta: fb.angerDelta, reply: '稍等，老娘想一下...' };
+              source = 'rate-limit';
             } else {
               throw new Error('API ' + r.status + ': ' + errText.slice(0, 200));
             }
