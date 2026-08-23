@@ -844,8 +844,8 @@ const Game = {
       apiBase: 'https://openrouter.ai/api/v1',
       apiModel: 'openrouter/free',
       customPrompts: {},
-      // 前端部署在 GitHub Pages，后端在 Cloudflare Worker
-      apiBaseUrl: 'https://anger-ai-game-api.13965052395.workers.dev'
+      // 前端部署在 Cloudflare Pages，Functions 同源调用（无 CORS）
+      apiBaseUrl: ''
     };
     API.setBase(this.config.apiBaseUrl || '');
     document.getElementById('userInput').addEventListener('keydown', (e) => {
