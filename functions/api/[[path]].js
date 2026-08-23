@@ -279,7 +279,8 @@ ${text}
             } else {
               const ch = data.choices[0];
               const fr = ch?.finish_reason;
-              if (fr === 'content_filter' || fr === 'safety' || fr === 'refusal' || fr === 'error') {
+              // 只把真正的内容过滤/拒答判为 safety，其他 finish_reason 走正常解析
+              if (fr === 'content_filter' || fr === 'safety' || fr === 'refusal') {
                 result = { ...SAFETY_RESP }; source = 'fallback-safety';
               } else {
                 const content = (ch?.message?.content ?? '').toString();
