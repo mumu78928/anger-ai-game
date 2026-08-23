@@ -255,15 +255,18 @@ ${text}
           };
           if (!apiModel.includes('free')) body2.response_format = { type: 'json_object' };
 
-          // 429 自动重试 2 次（指数退避 1s → 3s）
+          // 429 自动重试 2 次（指数退避 2s → 4s），连续 429 直接放弃避免无谓等待
           let r = null, attempt = 0;
+          let got429 = false;
           for (attempt = 0; attempt < 3; attempt++) {
             r = await fetch(apiBase.replace(/\/$/, '') + '/chat/completions', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
               body: JSON.stringify(body2)
             });
+            if (r.ok) break;
             if (r.status !== 429 && r.status !== 503) break;
+            got429 = true;
             const wait = (attempt + 1) * 2000;
             console.log('[chat] 429/503 retry', attempt + 1, 'after', wait, 'ms');
             await new Promise(r => setTimeout(r, wait));
@@ -273,9 +276,9 @@ ${text}
             if (isSafety(errText)) {
               result = { ...SAFETY_RESP }; source = 'fallback-safety';
             } else if (r.status === 429 || r.status === 503) {
-              // 限流/服务暂时不可用：返回"再试一次"而不是内容过滤
+              // 限流：提示玩家去配置自己的 key
               const fb = fallbackReply(stage, cur);
-              result = { angerDelta: fb.angerDelta, reply: '稍等，老娘想一下...' };
+              result = { angerDelta: fb.angerDelta, reply: '⏰ AI 今日免费额度已用完，去后台（密码150908）填你自己的 OpenRouter/Groq key 即可继续。' };
               source = 'rate-limit';
             } else {
               throw new Error('API ' + r.status + ': ' + errText.slice(0, 200));
