@@ -704,35 +704,29 @@ updateStatusTime();
 // ============== 前端安全过滤 ==============
 // 即使后端没拦住安全拒绝，前端也兜底
 // 覆盖：OpenAI/Moderation、OpenRouter、NVIDIA NemoGuard、Anthropic、Azure、国内厂商
+// 只识别"AI 自己说不能回答"，其他泛词不再拦截
 const SAFETY_REJECT_PATTERNS = [
   /user safety/i,
-  /safety categories/i,
-  /safety category/i,
-  /\bprofanity\b/i,
-  /\bnsfw\b/i,
-  /\bunsafe\b/i,
-  /\bblocked\b/i,
-  /\bcontent[_\s-]?filter\b/i,
-  /\bcontent[_\s-]?policy\b/i,
-  /\bsafety[_\s-]?policy\b/i,
-  /\brefused?\b/i,
-  /\bviolat(e|ion|ing)\b/i,
-  /\bmoderation\b/i,
+  /safety categories?/i,
+  /content[_\s-]?(filter|policy)\b/i,
+  /safety[_\s-]?policy\b/i,
+  /flagged[_\s-]?input/i,
   /requires moderation/i,
-  /input was flagged/i,
-  /flagged_input/i,
-  /敏感词/,
-  /内容违规/,
   /审核不通过/,
+  /内容违规/,
+  /敏感词/,
   /违反规范/,
   /不适宜内容/,
   /不适当/,
   /存在违规/,
   /policy_violation/,
-  /response\.safety/i,
-  /as an? ai.*(cannot|can't|will not|unable)/i,
-  /i (cannot|can'?t|am not able|will not)/i,
-  /对不起.*(无法|不能|帮助)/
+  /response\.safety/,
+  // 必须是 "as an AI" 开头 + 拒绝意图才拦截
+  /^as an? (ai|assistant|language model).*?(cannot|can't|will not|unable|won't|am unable)/i,
+  // "I cannot..." 必须是整句
+  /^i (cannot|can't|am not able|will not|am unable)/i,
+  // 中文道歉
+  /^对不起，?(我|本).*?(无法|不能)/i
 ];
 
 function looksLikeSafetyReject(text) {
@@ -880,16 +874,25 @@ const Game = {
       // no-op
     }
     try {
-      await API.health();
-      this.apiOnline = true;
-      try {
-        const r = await API.getStages();
-        if (r && r.stages) {
-          window.__BACKEND_STAGES__ = r.stages;
-        }
-      } catch (e) {}
+      // health 重试 1 次：冷启动可能 5-10s，单次 timeout 后不要放弃
+      let ok = false;
+      for (let i = 0; i < 2; i++) {
+        try { await API.health(); ok = true; break; }
+        catch (e) { if (i === 1) throw e; await new Promise(r => setTimeout(r, 1500)); }
+      }
+      this.apiOnline = ok;
+      if (ok) {
+        try {
+          const r = await API.getStages();
+          if (r && r.stages) {
+            window.__BACKEND_STAGES__ = r.stages;
+          }
+        } catch (e) {}
+      }
     } catch (e) {
-      this.apiOnline = false;
+      // health 失败但不要锁死 apiOnline= false；玩家说话时会再试
+      this.apiOnline = null;  // null = 未知，等真用时再测
+      console.warn('[health] 失败，但游戏仍可用，聊天时会重试:', e.message);
     }
     // 尝试恢复存档
     const loaded = this.loadSave();
@@ -1120,28 +1123,46 @@ const Game = {
 
     let reply = '', angerDelta = 0, source = 'offline';
     try {
-      if (this.apiOnline) {
-        const payload = {
-          stage: this.currentStage,
-          anger: this.anger,
-          text,
-          config: {
-            apiKey: this.config.useApi ? this.config.apiKey : '',
-            apiBase: this.config.apiBase || undefined,
-            apiModel: this.config.apiModel || undefined,
-            customPrompts: this.config.customPrompts
+      if (this.apiOnline !== false) {  // null (未知) 或 true 都试一次
+        try {
+          const payload = {
+            stage: this.currentStage,
+            anger: this.anger,
+            text,
+            config: {
+              apiKey: this.config.useApi ? this.config.apiKey : '',
+              apiBase: this.config.apiBase || undefined,
+              apiModel: this.config.apiModel || undefined,
+              customPrompts: this.config.customPrompts
+            }
+          };
+          // chat 重试 1 次防冷启动 timeout
+          let r = null;
+          for (let i = 0; i < 2; i++) {
+            try { r = await API.chat(payload); break; }
+            catch (e) {
+              if (i === 1) throw e;
+              console.warn('[chat] 重试 1 次:', e.message);
+              await new Promise(rr => setTimeout(rr, 1500));
+            }
           }
-        };
-        const r = await API.chat(payload);
-        reply = r.reply || '';
-        angerDelta = typeof r.angerDelta === 'number' ? r.angerDelta : 0;
-        source = r.source || 'unknown';
-      } else {
+          if (r) {
+            reply = r.reply || '';
+            angerDelta = typeof r.angerDelta === 'number' ? r.angerDelta : 0;
+            source = r.source || 'unknown';
+            this.apiOnline = true;
+          }
+        } catch (e) {
+          console.warn('[chat] 调用失败，回退本地:', e.message);
+          this.apiOnline = false;
+        }
+      }
+      if (!reply) {
         await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
         const fb = localFallbackReply(this.currentStage, this.anger);
         reply = fb.reply;
         angerDelta = fb.angerDelta;
-        source = 'offline';
+        source = source || 'offline';
       }
     } catch (err) {
       console.error(err);
