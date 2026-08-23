@@ -291,8 +291,6 @@ ${text}
                 const content = (ch?.message?.content ?? '').toString();
                 if (!content || isSafety(content)) {
                   result = { ...SAFETY_RESP }; source = 'fallback-safety';
-                } else if (isSafety(JSON.stringify(data))) {
-                  result = { ...SAFETY_RESP }; source = 'fallback-safety';
                 } else {
                   const parsed = parseAI(content);
                   if (parsed) {
